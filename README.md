@@ -1,31 +1,56 @@
-![YOLO-Master Issue #54 audited routing stability repository banner](docs/assets/repository-banner.png)
+<p align="center">
+  <img src="docs/assets/repository-banner.png"
+       alt="Audited multi-seed MoT routing stability research portfolio"
+       width="100%">
+</p>
 
-# YOLO-Master Issue #54:
-# Audited Multi-Seed MoT Routing Stability and Architecture Controls
+<h1 align="center">YOLO-Master Issue #54</h1>
 
-_A reproducible study of cross-seed MoT routing stability, architecture controls, and evidence integrity on
-VisDrone2019-DET._
+<p align="center"><strong>Audited Multi-Seed MoT Routing Stability and Architecture Controls</strong></p>
+
+<p align="center">
+  A reproducible study of routing stability, architecture controls, and evidence integrity on VisDrone2019-DET.
+</p>
+
+<p align="center">
+  <a href="https://github.com/PinkTulips139/YOLO-Master-Issue54-MoT-Routing-Stability/actions/workflows/validate.yml"><img alt="Validation" src="https://github.com/PinkTulips139/YOLO-Master-Issue54-MoT-Routing-Stability/actions/workflows/validate.yml/badge.svg"></a>
+  <a href="https://github.com/PinkTulips139/YOLO-Master-Issue54-MoT-Routing-Stability/tags"><img alt="Version" src="https://img.shields.io/github/v/tag/PinkTulips139/YOLO-Master-Issue54-MoT-Routing-Stability?label=version"></a>
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/PinkTulips139/YOLO-Master-Issue54-MoT-Routing-Stability"></a>
+</p>
+
+<p align="center"><strong>English</strong> · <a href="README_CN.md">中文</a></p>
+
+<p align="center">
+  <a href="docs/RESULTS_AND_LIMITATIONS.md">Results</a> ·
+  <a href="docs/ROUTING_STABILITY.md">Routing stability</a> ·
+  <a href="docs/ARCHITECTURE_CONTROLS.md">Architecture controls</a> ·
+  <a href="docs/REPRODUCTION.md">Reproduction</a> ·
+  <a href="provenance/README.md">Provenance</a> ·
+  <a href="contributions/README.md">Contributions</a> ·
+  <a href="CITATION.cff">Citation</a>
+</p>
 
 **This is an independent research portfolio and is not an official Tencent repository.**
 
-**English** · [中文](README_CN.md)
-
-[Results](docs/RESULTS_AND_LIMITATIONS.md) ·
-[Routing stability](docs/ROUTING_STABILITY.md) ·
-[Architecture controls](docs/ARCHITECTURE_CONTROLS.md) ·
-[Reproduction](docs/REPRODUCTION.md) ·
-[Provenance](provenance/README.md) ·
-[Contributions](contributions/README.md) ·
-[Citation](CITATION.cff)
-
 This repository curates the completed research associated with
 [Tencent/YOLO-Master Issue #54](https://github.com/Tencent/YOLO-Master/issues/54) and
-[Draft PR #216](https://github.com/Tencent/YOLO-Master/pull/216). It is a compact public evidence package, not a
-copy of Tencent/YOLO-Master. Ownership, source boundaries, and excluded evidence are recorded file by file.
+[PR #216](https://github.com/Tencent/YOLO-Master/pull/216). It is a compact public evidence package, not a copy of
+Tencent/YOLO-Master. Ownership, source boundaries, and excluded evidence are recorded file by file.
+
+## Research question
+
+> Does relatively stable detection performance imply stable internal expert routing across independently trained
+> MoT seeds?
 
 > [!IMPORTANT]
 > **Main result:** detection performance is relatively stable across five independently trained MoT seeds, while
 > internal expert routing shows only moderate or low cross-seed agreement with substantial layer-level variation.
+
+| 5 | 6 | 0.526 | 0.435 |
+|---:|---:|---:|---:|
+| Independent MoT seeds | Captured MoT layers | Dominant agreement | Token top-1 agreement |
+
+Performance stability and routing stability are evaluated as distinct questions.
 
 ## At a glance
 
@@ -132,9 +157,21 @@ repeated-export evidence, and interpretation limits.
 Tencent/YOLO-Master and its Ultralytics foundation provide the detector framework, training engine, model families,
 and the original Issue #54 research direction. Those components are not claimed as personal work.
 
-### Issue #54 research and engineering work
+### Highest-value Issue #54 work
 
-The contribution recorded in the audited branch and Draft PR #216 includes:
+- Versioned experiment manifests and a formal registry.
+- Checkpoint SHA256 identity validation and duplicate-checkpoint rejection.
+- Deterministic fixed-image MoT routing export.
+- Cross-seed alignment and agreement/JSD/entropy/utilization metrics.
+- Strict serial formal queues and isolated runners.
+- EsMoE and MoA architecture controls kept separate from MoT routing evidence.
+- Cross-version AMP, Torch 1.8, export-safe scatter, and routing-protocol compatibility.
+- Formal reports, cross-platform validation, and provenance.
+
+<details>
+<summary><strong>Detailed contribution map</strong></summary>
+
+The contribution recorded in the audited branch and PR #216 includes:
 
 - versioned experiment manifests and a formal registry;
 - checkpoint SHA256 validation and duplicate-checkpoint rejection;
@@ -156,11 +193,10 @@ The contribution recorded in the audited branch and Draft PR #216 includes:
 Exact commit ownership and changed paths are documented in [the commit map](contributions/COMMIT_MAP.md). The two
 most focused compatibility commits are preserved as [mail-format patches](patches/README.md).
 
-### Portfolio-only outputs
+This portfolio separately adds compact public tables, deterministic figures, bilingual documentation, publication
+policy, source manifests, and validators. These outputs are not part of the upstream framework.
 
-This repository adds compact public tables, deterministic figures, bilingual documentation, publication policy,
-source manifests, and validators. Those are generated or authored for this personal portfolio and are separate
-from the upstream framework.
+</details>
 
 ## Evidence flow
 
@@ -213,21 +249,28 @@ entry points, and the no-compute default.
 | [Contributions](contributions/README.md) | Issue, PR, commit, and patch boundaries |
 | [Models](models/README.md) | Metadata-only index and no-weights policy |
 
-## Upstream contribution status
+## Current upstream status
 
 This is a dated snapshot from **2026-08-03 (Asia/Shanghai)**, not a live badge.
 
-| Item | Recorded state |
+| Field | Status |
 |---|---|
 | Official Issue #54 | Open |
-| PR #216 | Open, Draft |
-| Base / head | `Tencent:main` ← `PinkTulips139:issue54-mot-routing-stability` |
-| Head commit | `dd490a80840dd70836e9363e14630039c7086a87` |
-| PR snapshot | 13 commits, 100 changed files |
-| Latest-head checks | 9 passed, 3 pending, 5 skipped |
+| PR #216 | Open, Ready for review |
+| Current PR head | `cdffaaf3e30d1ff742c0cd32f7ce7c295f7a0ade` |
+| Formal evidence snapshot | `dd490a80840dd70836e9363e14630039c7086a87` |
+| Base | `Tencent/YOLO-Master:main` at `a13938ce9cc8f761136384e935e7c65fefa4cfee` |
+| Commits / changed files | 14 / 135 |
+| Diff size | 21,916 additions / 172 deletions |
+| Mergeability | Mergeable at query time |
+| Required CI | CI run #234 passed |
+| Conditional jobs | GPU, SlowTests, Conda, RaspberryPi, and NVIDIA Jetson skipped by condition |
+| Upstream acceptance | Not merged; acceptance not implied |
 
-PR #216 is not recorded as merged or accepted. Its current-head CI was not fully complete at the snapshot, so this
-repository does not display an older all-green screenshot as if it applied to `dd490a8`.
+This is a dated snapshot, not a permanent status. Ready for review does not mean accepted, and mergeable does not
+mean maintainer approval. `dd490a8` remains the formal evidence and visual-evidence snapshot; `cdffaaf3` is the
+current PR head after public-evidence slimming. The scientific results did not change: the raw cross-seed JSON was
+removed only from the public Git diff while its formal SHA256 and provenance remain recorded.
 
 See [the PR record](contributions/PR_216.md), [dated status snapshot](provenance/PR_STATUS.md), and
 [manual screenshot checklist](docs/screenshots/SCREENSHOT_CHECKLIST.md).
@@ -247,6 +290,15 @@ repository's AGPL-3.0 license does not grant dataset or model-weight redistribut
 ## Limitations
 
 - The architecture seed counts are unequal: MoT n=5, EsMoE n=3, and MoA n=1.
+- MoA has no between-seed variance estimate and no demonstrated cross-seed routing stability.
+- MoT uses FP32 while EsMoE and MoA use AMP; comparisons are protocol-specific.
+- Routing evidence uses one fixed 32-image subset and six MoT layers.
+- Conclusions are descriptive and non-causal.
+
+<details>
+<summary><strong>Full limitations</strong></summary>
+
+- The architecture seed counts are unequal: MoT n=5, EsMoE n=3, and MoA n=1.
 - MoT uses FP32 while EsMoE and MoA use AMP; comparisons are protocol-specific and descriptive.
 - MoA has no between-seed variance estimate and no demonstrated cross-seed routing stability.
 - Routing evidence uses 32 fixed validation images and six MoT layers from one dataset/protocol.
@@ -257,8 +309,10 @@ repository's AGPL-3.0 license does not grant dataset or model-weight redistribut
 - Expert utilization does not establish a fixed expert semantic role.
 - Deterministic settings cannot guarantee bitwise equivalence for every CUDA kernel and environment.
 - No checkpoint, dataset, raw log, or large raw routing JSON is public.
-- PR #216 remains an open Draft at the dated snapshot; upstream acceptance is not implied.
+- PR #216 is Open and Ready for review at the dated snapshot; it is not merged or accepted.
 - The study does not claim general architecture superiority, causal proof, state of the art, or universal behavior.
+
+</details>
 
 Read [Results and limitations](docs/RESULTS_AND_LIMITATIONS.md) and the [FAQ](docs/FAQ.md) before reusing a result
 outside the recorded protocol.

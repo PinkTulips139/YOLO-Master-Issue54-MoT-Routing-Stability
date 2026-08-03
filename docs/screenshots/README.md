@@ -1,6 +1,7 @@
 # Screenshot evidence
 
-Screenshots are optional presentation aids, not formal data sources. No screenshot is currently published because
-the latest PR #216 head had pending checks during the audit and no safe browser capture facility was available.
+Screenshots are optional presentation aids, not formal data sources. No screenshot is currently published. PR #216
+CI run #234 passed for current head `cdffaaf3`, but no safely cropped capture was available; no screenshot was
+fabricated or substituted.
 
 Formal results remain auditable through the CSV, manifests, hashes, and deterministic figures.

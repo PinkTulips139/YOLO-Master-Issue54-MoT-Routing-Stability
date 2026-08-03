@@ -474,6 +474,119 @@ def banner(output: Path) -> None:
     save(fig, output)
 
 
+def social_preview(output: Path) -> None:
+    """Draw the 1280 × 640 GitHub Social Preview without external assets."""
+    fig, ax = plt.subplots(figsize=(12.8, 6.4))
+    ax.set_xlim(0, 12.8)
+    ax.set_ylim(0, 6.4)
+    ax.axis("off")
+    ax.add_patch(
+        FancyBboxPatch(
+            (0, 0),
+            12.8,
+            6.4,
+            boxstyle="round,pad=0.02",
+            facecolor="#F6F9FB",
+            edgecolor="#D7E2E9",
+        )
+    )
+    ax.text(
+        0.75,
+        5.35,
+        "YOLO-Master Issue #54",
+        fontsize=25,
+        fontweight="bold",
+        color=NAVY,
+        va="center",
+    )
+    ax.text(
+        0.75,
+        4.55,
+        "Multi-Seed MoT Routing Stability",
+        fontsize=21,
+        fontweight="bold",
+        color=BLUE,
+        va="center",
+    )
+    cards = (
+        (0.75, 3.2, "5", "independent MoT seeds"),
+        (3.55, 3.2, "6", "captured routing layers"),
+        (0.75, 1.9, "0.526", "dominant agreement"),
+        (3.55, 1.9, "0.435", "token agreement"),
+    )
+    for x, y, value, label in cards:
+        ax.add_patch(
+            FancyBboxPatch(
+                (x, y - 0.42),
+                2.45,
+                0.95,
+                boxstyle="round,pad=0.08,rounding_size=0.08",
+                facecolor="white",
+                edgecolor="#D7E2E9",
+                linewidth=1.2,
+            )
+        )
+        ax.text(
+            x + 0.18,
+            y + 0.12,
+            value,
+            fontsize=18,
+            fontweight="bold",
+            color=TEAL,
+            va="center",
+        )
+        ax.text(x + 0.18, y - 0.22, label, fontsize=9.5, color=GRAY, va="center")
+
+    center = (9.15, 3.45)
+    experts = (
+        (11.25, 4.8, "Local"),
+        (11.45, 3.35, "Window"),
+        (11.1, 1.85, "Deformable"),
+    )
+    ax.add_patch(Circle(center, 0.62, facecolor=NAVY, edgecolor="none"))
+    ax.text(
+        *center,
+        "MoT",
+        color="white",
+        ha="center",
+        va="center",
+        fontsize=14,
+        fontweight="bold",
+    )
+    for x, y, label in experts:
+        ax.plot(
+            [center[0] + 0.5, x - 0.55],
+            [center[1], y],
+            color=CYAN,
+            linewidth=2.6,
+            alpha=0.9,
+        )
+        ax.add_patch(
+            Circle((x, y), 0.53, facecolor="white", edgecolor=CYAN, linewidth=2.2)
+        )
+        ax.text(
+            x,
+            y,
+            label,
+            color=NAVY,
+            ha="center",
+            va="center",
+            fontsize=9.5,
+            fontweight="bold",
+        )
+    ax.text(
+        9.95,
+        0.65,
+        "Audited research portfolio",
+        fontsize=13,
+        fontweight="bold",
+        color=GRAY,
+        ha="center",
+    )
+    fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
+    save(fig, output)
+
+
 def build(figure_dir: Path, asset_dir: Path) -> None:
     """Build all outputs into explicit directories."""
     configure_style()
@@ -483,6 +596,7 @@ def build(figure_dir: Path, asset_dir: Path) -> None:
     utilization_figure(figure_dir / OUTPUTS[3])
     pairwise_figure(figure_dir / OUTPUTS[4])
     banner(asset_dir / "repository-banner.png")
+    social_preview(asset_dir / "social-preview.png")
 
 
 def sha256(path: Path) -> str:
@@ -507,6 +621,12 @@ def check_determinism() -> None:
                 second / "assets" / "repository-banner.png",
             )
         )
+        pairs.append(
+            (
+                first / "assets" / "social-preview.png",
+                second / "assets" / "social-preview.png",
+            )
+        )
         mismatches = [
             (left.name, sha256(left), sha256(right))
             for left, right in pairs
@@ -515,7 +635,7 @@ def check_determinism() -> None:
         if mismatches:
             raise SystemExit(f"deterministic figure mismatch: {mismatches}")
     print(
-        "PASS: two independent rebuilds produced byte-identical hashes for all six PNG files"
+        "PASS: two independent rebuilds produced byte-identical hashes for all seven PNG files"
     )
 
 
@@ -537,7 +657,9 @@ def main() -> None:
         check_determinism()
         return
     build(FIGURES, ASSETS)
-    print("PASS: generated five result figures and one repository banner")
+    print(
+        "PASS: generated five result figures, one repository banner, and one social preview"
+    )
 
 
 if __name__ == "__main__":

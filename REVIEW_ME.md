@@ -1,11 +1,11 @@
-# Publication review report
+# Publication review report — v1.0.1
 
 Audit and build date: 2026-08-03 (Asia/Shanghai).
 
 ## Outcome
 
 This directory is a new independent research portfolio for Tencent/YOLO-Master Issue #54. It contains bilingual
-landing pages, compact formal result tables, six deterministic PNG assets, path-parameterized protocol records,
+landing pages, compact formal result tables, seven deterministic PNG assets, path-parameterized protocol records,
 validation scripts, exact compatibility patches, model metadata, and file-level provenance.
 
 It is not a copy of Tencent/YOLO-Master and contains no dataset, checkpoint, raw log, large cross-seed JSON,
@@ -35,8 +35,8 @@ compressed archive, private URL, or private absolute path.
 
 ## Public/private boundary
 
-Public evidence includes six derived CSV tables, five result figures, a banner, formal hashes, a report manifest,
-source provenance, two exact patches, and validation/reproduction tooling.
+Public evidence includes six derived CSV tables, five result figures, a banner, a Social Preview, formal hashes, a
+report manifest, source provenance, two exact patches, and validation/reproduction tooling.
 
 Private archive copies include only the formal 3,112,098-byte cross-seed JSON and the 274,694-byte downloaded
 provenance bundle, with private SHA256 records. The existing `Issue54-LocalArchive` remains unchanged.
@@ -64,9 +64,10 @@ the upstream project/Issue without guessing a YOLO-Master DOI.
 
 ## PR and screenshots
 
-PR #216 was Open and Draft at head `dd490a8` on 2026-08-03. The online snapshot reported 9 passed, 3 pending, and 5
-skipped checks. No latest-head all-green screenshot is claimed or fabricated. Manual capture instructions are in
-`docs/screenshots/SCREENSHOT_CHECKLIST.md`.
+PR #216 was Open and Ready for review at current head `cdffaaf3` on 2026-08-03. CI run #234 passed all required
+checks; conditional jobs were skipped rather than failed. The formal evidence remains anchored to `dd490a8`, and no
+formal experiment result changed. No GitHub UI screenshot is claimed or fabricated. Manual capture instructions are
+in `docs/screenshots/SCREENSHOT_CHECKLIST.md`.
 
 ## Validation gates
 
@@ -77,13 +78,13 @@ Ruff, Git whitespace, and clean-worktree state.
 
 ## Publication boundary
 
-The repository may be published only after all local gates pass, the target GitHub repository is reconfirmed absent,
-the source repository is rechecked unchanged, and local tag `v1.0.0` exists. Publication must use normal push only.
-No force, amend, reset, clean, rebase, or history rewrite is authorized.
+Version v1.0.1 may be published only after all local gates pass, the remote branch is confirmed to contain no unknown
+commits, and tag `v1.0.0` is rechecked unchanged. Publication must use normal push only. No force, amend, reset,
+clean, rebase, or history rewrite is authorized.
 
 ## Remaining manual items
 
-1. Capture PR screenshots only after the current head's required checks complete.
-2. Optionally configure the repository social-preview image from the public banner in GitHub settings.
+1. Upload `docs/assets/social-preview.png` through the GitHub Social preview settings UI.
+2. Optionally capture a safely cropped PR #216 CI #234 screenshot using the checklist.
 3. Recheck PR #216 state before any future release or citation.
 4. Keep checkpoint and dataset publication disabled until separate license/provenance approval exists.

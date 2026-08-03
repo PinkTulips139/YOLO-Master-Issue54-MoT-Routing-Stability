@@ -11,6 +11,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SOURCE_REPOSITORY = "https://github.com/PinkTulips139/YOLO-Master.git"
 SOURCE_BRANCH = "issue54-mot-routing-stability"
 SOURCE_COMMIT = "dd490a80840dd70836e9363e14630039c7086a87"
+PORTFOLIO_VERSION = "v1.0.1"
 PORTFOLIO_REPOSITORY = (
     "https://github.com/PinkTulips139/YOLO-Master-Issue54-MoT-Routing-Stability"
 )
@@ -65,7 +66,7 @@ def generated_outputs() -> list[str]:
     patterns = (
         "results/tables/*.csv",
         "results/figures/*.png",
-        "docs/assets/repository-banner.png",
+        "docs/assets/*.png",
     )
     paths: list[str] = []
     for pattern in patterns:
@@ -172,10 +173,11 @@ def classification(path: str) -> str:
         return "upstream_provided"
     if path.startswith("patches/") and path.endswith(".patch"):
         return "user_modified_upstream"
-    if path.startswith("results/") or path in {
-        "docs/assets/repository-banner.png",
-        "provenance/SOURCE_MANIFEST.csv",
-    }:
+    if (
+        path.startswith("results/")
+        or (path.startswith("docs/assets/") and path.endswith(".png"))
+        or path == "provenance/SOURCE_MANIFEST.csv"
+    ):
         return "generated_artifact"
     if path in {"models/MODEL_INDEX.csv", "provenance/RAW_EVIDENCE_INDEX.csv"}:
         return "public_metadata_only"
@@ -225,14 +227,13 @@ def source_record(path: str) -> tuple[str, str, str, str, str, str, str, str]:
             "generated",
             "",
         )
-    if (
-        path.startswith("results/figures/")
-        or path == "docs/assets/repository-banner.png"
+    if path.startswith("results/figures/") or (
+        path.startswith("docs/assets/") and path.endswith(".png")
     ):
         return (
             PORTFOLIO_REPOSITORY,
             "main",
-            "v1.0.0",
+            PORTFOLIO_VERSION,
             "results/tables + figure builder",
             "PinkTulips139",
             "AGPL-3.0",
@@ -242,7 +243,7 @@ def source_record(path: str) -> tuple[str, str, str, str, str, str, str, str]:
     return (
         PORTFOLIO_REPOSITORY,
         "main",
-        "v1.0.0",
+        PORTFOLIO_VERSION,
         "",
         "PinkTulips139",
         "AGPL-3.0",
@@ -322,7 +323,7 @@ def build_source_manifest() -> None:
                 "destination_path": "provenance/SOURCE_MANIFEST.csv",
                 "source_repository": PORTFOLIO_REPOSITORY,
                 "source_branch": "main",
-                "source_commit": "v1.0.0",
+                "source_commit": PORTFOLIO_VERSION,
                 "source_path": "",
                 "classification": "generated_artifact",
                 "author_or_origin": "PinkTulips139",

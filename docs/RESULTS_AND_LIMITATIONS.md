@@ -32,7 +32,7 @@ EsMoE n=3 reports mAP50 `0.160010 ± 0.003501` and mAP50-95 `0.083680 ± 0.00200
 - Expert selection frequency does not establish semantic specialization.
 - Deterministic settings have environment- and kernel-level limits.
 - Checkpoints, datasets, raw logs, and large raw JSON are absent from public Git.
-- PR #216 was Open and Draft on 2026-08-03; upstream acceptance is not implied.
+- PR #216 was Open and Ready for review on 2026-08-03; it was not merged, and upstream acceptance is not implied.
 - No SOTA, causal, or universal architecture claim is supported.
 
 Read [Methods](METHODS.md), [Routing stability](ROUTING_STABILITY.md), and

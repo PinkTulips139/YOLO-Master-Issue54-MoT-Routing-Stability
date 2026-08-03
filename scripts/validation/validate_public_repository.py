@@ -36,6 +36,8 @@ REQUIRED = {
     "docs/INDEX.md",
     "docs/ROUTING_STABILITY.md",
     "docs/ARCHITECTURE_CONTROLS.md",
+    "docs/assets/social-preview.png",
+    "docs/assets/SOCIAL_PREVIEW_SETUP.md",
     "results/tables/architecture_summary.csv",
     "results/tables/mot_seed_metrics.csv",
     "results/tables/mot_layer_stability.csv",
@@ -54,6 +56,7 @@ REQUIRED = {
 }
 PNG_DIMENSIONS = {
     "docs/assets/repository-banner.png": (1600, 500),
+    "docs/assets/social-preview.png": (1280, 640),
     "results/figures/architecture_performance.png": (1200, 720),
     "results/figures/mot_seed_performance.png": (1200, 720),
     "results/figures/mot_layer_routing_stability.png": (1200, 720),
@@ -226,7 +229,7 @@ def validate_sums() -> None:
         path = ROOT / relative
         require(path.is_file(), f"SHA256SUMS target missing: {relative}")
         require(sha256(path) == expected, f"SHA256SUMS mismatch: {relative}")
-    require(len(seen) == 12, f"expected 12 checksummed tables/PNGs, found {len(seen)}")
+    require(len(seen) == 13, f"expected 13 checksummed tables/PNGs, found {len(seen)}")
 
 
 def validate_source_manifest(files: list[Path]) -> None:
@@ -274,7 +277,16 @@ def validate_bilingual_facts() -> None:
         "不是 Tencent 官方仓库" in chinese, "Chinese independent disclaimer missing"
     )
     require(
-        "Draft" in english and "Draft" in chinese, "PR Draft status must be visible"
+        "Ready for review" in english and "Ready for review" in chinese,
+        "PR Ready-for-review status must be visible",
+    )
+    require(
+        "cdffaaf3e30d1ff742c0cd32f7ce7c295f7a0ade" in english
+        and "cdffaaf3e30d1ff742c0cd32f7ce7c295f7a0ade" in chinese,
+        "current PR head must be visible in both READMEs",
+    )
+    require(
+        "CI run #234 passed" in english, "current successful CI run must be visible"
     )
     require(
         "PR #216 is merged" not in english and "PR #216 | Merged" not in english,

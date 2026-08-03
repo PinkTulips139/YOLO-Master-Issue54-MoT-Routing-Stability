@@ -6,15 +6,20 @@ Snapshot date: **2026-08-03 (Asia/Shanghai)**.
 |---|---|
 | URL | <https://github.com/Tencent/YOLO-Master/pull/216> |
 | State | Open |
-| Draft | Yes |
-| Base | `Tencent:main` |
-| Head | `PinkTulips139:issue54-mot-routing-stability` |
-| Head SHA | `dd490a80840dd70836e9363e14630039c7086a87` |
-| Commits / files | 13 / 100 |
-| Checks | 9 passed, 3 pending, 5 skipped |
+| Review mode | Ready for review |
+| Base | `a13938ce9cc8f761136384e935e7c65fefa4cfee` |
+| Formal evidence snapshot | `dd490a80840dd70836e9363e14630039c7086a87` |
+| Current PR head | `cdffaaf3e30d1ff742c0cd32f7ce7c295f7a0ade` |
+| Commits / changed files | 14 / 135 |
+| Diff size | 21,916 additions / 172 deletions |
+| Mergeability | Mergeable at query time |
+| Required checks | CI run #234 passed |
+| Upstream acceptance | Not merged; acceptance not implied |
 
-This file is a snapshot, not a live badge. It must be rechecked before future releases or claims. It does not state
-that the PR is Ready, Merged, accepted, or fully green at the current head.
+The formal evidence snapshot identifies the verified experiments and presentation evidence. The current PR head adds
+public-evidence slimming: the raw cross-seed JSON was removed from the Git diff while its SHA256 and provenance were
+retained. This changed review volume from 103,979 to 21,916 additions without changing formal metrics, checkpoint
+identities, or scientific conclusions.
 
-The earlier PR narrative cites a passed CI run at `09c9e0e`; that historical statement is not substituted for the
-pending checks observed at `dd490a8`.
+This is a dated snapshot, not a permanent status. Ready for review is not acceptance, and mergeability is not
+maintainer approval. Recheck GitHub before future releases or claims.

@@ -8,6 +8,7 @@
   },
   "public_outputs": {
     "docs/assets/repository-banner.png": "e95dc831cfedbc83ade8e8975fc24baa55aa619cfcb4f5c35e382adabbabefab",
+    "docs/assets/social-preview.png": "0a03e1b7210098896438fa517ba58e9a5c3d702e7cc938ef7cb3c56631afe896",
     "results/figures/architecture_performance.png": "057de9bbbb690da42e6252cd12ecc3d7ca9016d9c2000ca81d0e9d3be36236d1",
     "results/figures/expert_utilization_heatmap.png": "1cb01c1e2038e7a5fe5c006be99f274511fab70e9f0c821735eebe347e5d19bc",
     "results/figures/mot_layer_routing_stability.png": "bbcbc22d81ce0631fc524908246b900ee4c320114afb46c6ab4a670764be4dbf",

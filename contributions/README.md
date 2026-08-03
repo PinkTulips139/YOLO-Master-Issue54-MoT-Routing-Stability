@@ -1,6 +1,6 @@
 # Contribution guide
 
-This directory records the Issue #54 task, Draft PR #216, and the commit-level boundary between upstream code,
+This directory records the Issue #54 task, PR #216, and the commit-level boundary between upstream code,
 personal changes, and portfolio-only outputs.
 
 | Record | Purpose |
@@ -11,5 +11,5 @@ personal changes, and portfolio-only outputs.
 | [Patches](../patches/README.md) | Exact mail-format evidence for two focused fix commits |
 
 The personal contribution does not include ownership of Tencent/YOLO-Master or Ultralytics. Modified upstream paths
-retain upstream context and AGPL-3.0 obligations. PR #216 was Open and Draft on 2026-08-03 and is not presented as
-merged or accepted.
+retain upstream context and AGPL-3.0 obligations. PR #216 was Open and Ready for review on 2026-08-03 and is not
+presented as merged or accepted.

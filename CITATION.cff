@@ -10,7 +10,7 @@ authors:
   - name: PinkTulips139
 repository-code: "https://github.com/PinkTulips139/YOLO-Master-Issue54-MoT-Routing-Stability"
 url: "https://github.com/PinkTulips139/YOLO-Master-Issue54-MoT-Routing-Stability"
-version: 1.0.0
+version: 1.0.1
 date-released: "2026-08-03"
 license: AGPL-3.0
 keywords:
@@ -26,7 +26,7 @@ preferred-citation:
     Architecture Controls
   authors:
     - name: PinkTulips139
-  version: 1.0.0
+  version: 1.0.1
   date-released: "2026-08-03"
   repository-code: "https://github.com/PinkTulips139/YOLO-Master-Issue54-MoT-Routing-Stability"
 references:

@@ -20,4 +20,4 @@ Ignored `.pytest_cache`, `.ruff_cache`, and `runs` directories existed in the so
 ## Interpretation boundary
 
 The recorded results describe the audited Issue #54 branch and formal protocol. They do not characterize current or
-future Tencent main, and they do not imply that Draft PR #216 is accepted.
+future Tencent main, and they do not imply that PR #216 is accepted or merged.

@@ -1,29 +1,52 @@
-![YOLO-Master Issue #54 经审计的路由稳定性成果仓库封面](docs/assets/repository-banner.png)
+<p align="center">
+  <img src="docs/assets/repository-banner.png"
+       alt="经审计的多 seed MoT 路由稳定性个人研究成果"
+       width="100%">
+</p>
 
-# YOLO-Master Issue #54：
-# 经审计的多 Seed MoT 路由稳定性与架构对照
+<h1 align="center">YOLO-Master Issue #54</h1>
 
-_一项面向 VisDrone2019-DET 的可复现研究，考察 MoT 跨 seed 路由稳定性、架构对照与证据完整性。_
+<p align="center"><strong>经审计的多 Seed MoT 路由稳定性与架构对照</strong></p>
+
+<p align="center">一项面向 VisDrone2019-DET 的路由稳定性、架构对照与证据完整性可复现研究。</p>
+
+<p align="center">
+  <a href="https://github.com/PinkTulips139/YOLO-Master-Issue54-MoT-Routing-Stability/actions/workflows/validate.yml"><img alt="Validation" src="https://github.com/PinkTulips139/YOLO-Master-Issue54-MoT-Routing-Stability/actions/workflows/validate.yml/badge.svg"></a>
+  <a href="https://github.com/PinkTulips139/YOLO-Master-Issue54-MoT-Routing-Stability/tags"><img alt="Version" src="https://img.shields.io/github/v/tag/PinkTulips139/YOLO-Master-Issue54-MoT-Routing-Stability?label=version"></a>
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/PinkTulips139/YOLO-Master-Issue54-MoT-Routing-Stability"></a>
+</p>
+
+<p align="center"><a href="README.md">English</a> · <strong>中文</strong></p>
+
+<p align="center">
+  <a href="docs/RESULTS_AND_LIMITATIONS.md">结果</a> ·
+  <a href="docs/ROUTING_STABILITY.md">路由稳定性</a> ·
+  <a href="docs/ARCHITECTURE_CONTROLS.md">架构对照</a> ·
+  <a href="docs/REPRODUCTION.md">复现</a> ·
+  <a href="provenance/README.md">来源追踪</a> ·
+  <a href="contributions/README.md">贡献</a> ·
+  <a href="CITATION.cff">引用</a>
+</p>
 
 **这是独立的个人研究成果仓库，不是 Tencent 官方仓库。**
 
-[English](README.md) · **中文**
-
-[结果](docs/RESULTS_AND_LIMITATIONS.md) ·
-[路由稳定性](docs/ROUTING_STABILITY.md) ·
-[架构对照](docs/ARCHITECTURE_CONTROLS.md) ·
-[复现](docs/REPRODUCTION.md) ·
-[来源追踪](provenance/README.md) ·
-[贡献](contributions/README.md) ·
-[引用](CITATION.cff)
-
 本仓库整理与 [Tencent/YOLO-Master Issue #54](https://github.com/Tencent/YOLO-Master/issues/54) 和
-[Draft PR #216](https://github.com/Tencent/YOLO-Master/pull/216) 相关的已完成研究。它是一份紧凑的公开证据包，
+[PR #216](https://github.com/Tencent/YOLO-Master/pull/216) 相关的已完成研究。它是一份紧凑的公开证据包，
 不是 Tencent/YOLO-Master 的完整副本。文件来源、归属边界以及未公开证据均有逐项记录。
+
+## 研究问题
+
+> 当检测性能在独立训练 seed 之间相对稳定时，模型内部的专家路由是否也具有稳定性？
 
 > [!IMPORTANT]
 > **主要结果：**五个独立训练 MoT seed 的检测性能相对稳定，但内部专家路由仅呈现中等或较低的跨 seed
 > 一致性，并且层间差异明显。
+
+| 5 | 6 | 0.526 | 0.435 |
+|---:|---:|---:|---:|
+| 独立训练 MoT seed | 捕获的 MoT 层 | 主导专家一致性 | Token top-1 一致性 |
+
+性能稳定性与路由稳定性在本研究中被视为两个不同问题。
 
 ## 项目概览
 
@@ -128,9 +151,23 @@ Pairwise agreement、Jensen-Shannon divergence、utilization、重复导出与�
 Tencent/YOLO-Master 及其 Ultralytics 基础提供目标检测框架、训练引擎、模型族与 Issue #54 原始方向。
 这些内容不作为个人原创成果申领。
 
-### Issue #54 研究与工程工作
+### 最高价值的 Issue #54 工作
 
-审计分支与 Draft PR #216 中记录的贡献包括：
+默认展示的重点贡献包括：
+
+- 版本化 experiment manifest 与正式 registry；
+- checkpoint SHA256 身份验证与重复 checkpoint 拒绝；
+- 固定图片、可重复的 MoT routing export；
+- 跨 seed 对齐以及 agreement、JSD、entropy、utilization 指标；
+- 严格串行正式队列与隔离 runner；
+- 与 MoT 路由证据分离的 EsMoE、MoA 架构对照；
+- 跨版本 AMP、Torch 1.8、export-safe scatter 与路由协议兼容；
+- 正式报告、跨平台验证与 provenance。
+
+<details>
+<summary><strong>详细贡献清单</strong></summary>
+
+审计分支与 PR #216 中记录的完整贡献包括：
 
 - 版本化 experiment manifest 与正式 registry；
 - checkpoint SHA256 验证与重复 checkpoint 拒绝；
@@ -152,10 +189,10 @@ Tencent/YOLO-Master 及其 Ultralytics 基础提供目标检测框架、训练�
 具体提交和文件边界见[提交映射](contributions/COMMIT_MAP.md)，两项集中兼容修复见
 [邮件格式 patch](patches/README.md)。这些记录不表示 PR 已被 Tencent 合并。
 
-### 仅属于个人成果仓库的产物
-
 本仓库另外新增紧凑公开表、确定性图表、双语文档、发布政策、来源 manifest 和 validator；这些内容与
 上游框架代码明确分开。
+
+</details>
 
 ## 证据流
 
@@ -202,21 +239,28 @@ python scripts/validation/validate_public_repository.py
 | [贡献](contributions/README.md) | Issue、PR、commit 和 patch 边界 |
 | [模型](models/README.md) | 仅元数据索引与不发布权重政策 |
 
-## 上游贡献状态
+## 当前上游状态
 
 以下是 **2026-08-03（Asia/Shanghai）** 的日期快照，不是实时状态徽章。
 
-| 项目 | 记录状态 |
+| 字段 | 状态 |
 |---|---|
 | 官方 Issue #54 | Open |
-| PR #216 | Open、Draft |
-| Base / head | `Tencent:main` ← `PinkTulips139:issue54-mot-routing-stability` |
-| Head commit | `dd490a80840dd70836e9363e14630039c7086a87` |
-| PR 快照 | 13 commits、100 changed files |
-| 最新 head 检查 | 9 passed、3 pending、5 skipped |
+| PR #216 | Open、Ready for review |
+| 当前 PR head | `cdffaaf3e30d1ff742c0cd32f7ce7c295f7a0ade` |
+| 正式证据快照 | `dd490a80840dd70836e9363e14630039c7086a87` |
+| Base | `Tencent/YOLO-Master:main`，对应 `a13938ce9cc8f761136384e935e7c65fefa4cfee` |
+| Commits / changed files | 14 / 135 |
+| Diff 规模 | 21,916 additions / 172 deletions |
+| 可合并信号 | 查询时为 Mergeable |
+| 必需 CI | CI run #234 passed |
+| 条件跳过任务 | GPU、SlowTests、Conda、RaspberryPi、NVIDIA Jetson |
+| 上游接受状态 | 尚未 merged；不表示已被接受 |
 
-PR #216 没有被记录为 merged 或已接受。快照时当前 head 的 CI 尚未全部结束，因此本仓库不会拿旧的全绿截图
-冒充 `dd490a8` 的最新状态。详见 [PR 记录](contributions/PR_216.md)、[状态快照](provenance/PR_STATUS.md)和
+这是日期快照，不是永久状态。Ready for review 不等于已接受，mergeable 也不等于维护者批准。`dd490a8`
+仍是正式实验与视觉证据快照；`cdffaaf3` 是完成公开证据瘦身后的当前 PR head。科学结果未发生变化：大型
+cross-seed raw JSON 只从公开 Git diff 中移除，其正式 SHA256 与 provenance 仍被保留。详见
+[PR 记录](contributions/PR_216.md)、[状态快照](provenance/PR_STATUS.md)和
 [手工截图清单](docs/screenshots/SCREENSHOT_CHECKLIST.md)。
 
 ## 模型与数据集
@@ -233,6 +277,15 @@ VisDrone2019-DET 需要单独获取。公开 YAML 只是路径模板，不是数
 ## 主要限制
 
 - 架构 seed 数不相等：MoT n=5、EsMoE n=3、MoA n=1。
+- MoA 没有 seed 间方差估计，也没有跨 seed 路由稳定性证据。
+- MoT 使用 FP32，EsMoE 与 MoA 使用 AMP；比较仅适用于当前协议。
+- 路由证据只覆盖一个数据集、32 张固定验证图片和六个 MoT 层。
+- 结论是描述性的，不构成因果推断。
+
+<details>
+<summary><strong>完整限制</strong></summary>
+
+- 架构 seed 数不相等：MoT n=5、EsMoE n=3、MoA n=1。
 - MoT 使用 FP32，EsMoE 与 MoA 使用 AMP；比较仅适用于当前协议，且是描述性的。
 - MoA 没有 seed 间方差估计，也没有跨 seed 路由稳定性证据。
 - 路由证据只覆盖一个数据集、32 张固定验证图片和六个 MoT 层。
@@ -243,8 +296,10 @@ VisDrone2019-DET 需要单独获取。公开 YAML 只是路径模板，不是数
 - Expert utilization 不能证明某个专家具有固定语义。
 - Deterministic 设置不能保证所有 CUDA kernel 和环境逐 bit 一致。
 - 公开仓库没有 checkpoint、数据集、原始日志或大型原始 routing JSON。
-- 日期快照中 PR #216 仍为 Open Draft，不代表已被上游接受。
+- 日期快照中 PR #216 为 Open、Ready for review，尚未 merged，也不代表已被上游接受。
 - 本研究不声称普遍架构优势、因果证明、SOTA 或通用行为。
+
+</details>
 
 在其他场景引用结果前，请阅读[结果与限制](docs/RESULTS_AND_LIMITATIONS.md)和 [FAQ](docs/FAQ.md)。
 
