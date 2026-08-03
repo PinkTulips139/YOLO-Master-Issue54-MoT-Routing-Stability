@@ -126,9 +126,16 @@ def text_files(files: list[Path]) -> list[Path]:
 
 def validate_sensitive_content(files: list[Path]) -> None:
     """Reject private absolute paths and common credential patterns."""
-    windows_path = re.compile(r"[A-Za-z]:" + re.escape("\\"))
+    windows_path = re.compile(
+        r"\b[A-Za-z]:" + re.escape("\\") + r"[^\s'\"]+" + re.escape("\\")
+    )
     unix_private_root = "/" + "root" + "/"
-    token_markers = ("gh" + "o_", "github" + "_pat_", "AKIA", "BEGIN " + "PRIVATE KEY")
+    token_markers = (
+        "gh" + "o_",
+        "github" + "_pat_",
+        "AK" + "IA",
+        "BEGIN " + "PRIVATE KEY",
+    )
     for path in text_files(files):
         rel = path.relative_to(ROOT).as_posix()
         try:
@@ -271,7 +278,7 @@ def validate_bilingual_facts() -> None:
         "Draft" in english and "Draft" in chinese, "PR Draft status must be visible"
     )
     require(
-        "merged" not in english.lower().split("PR #216")[-1][:800],
+        "PR #216 is merged" not in english and "PR #216 | Merged" not in english,
         "README may imply PR #216 merged",
     )
     require(

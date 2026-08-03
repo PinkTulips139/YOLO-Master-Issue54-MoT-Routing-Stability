@@ -1,0 +1,54 @@
+name: Validate public research artifact
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install minimal validation dependencies
+        run: python -m pip install matplotlib numpy pillow pyyaml ruff
+
+      - name: Validate formal result semantics
+        run: python scripts/validation/validate_results.py
+
+      - name: Rebuild and compare deterministic figures
+        run: python scripts/analysis/build_portfolio_figures.py --check
+
+      - name: Validate public repository
+        run: python scripts/validation/validate_public_repository.py
+
+      - name: Compile Python files
+        run: >-
+          python -m py_compile
+          scripts/analysis/build_portfolio_figures.py
+          scripts/validation/build_manifests.py
+          scripts/validation/validate_results.py
+          scripts/validation/validate_public_repository.py
+
+      - name: Ruff lint
+        run: python -m ruff check scripts/
+
+      - name: Ruff format check
+        run: python -m ruff format --check scripts/
+
+      - name: Git whitespace and generated-file check
+        run: |
+          git diff --check
+          git diff --exit-code

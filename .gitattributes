@@ -4,5 +4,5 @@
 *.jpeg binary
 *.gif binary
 *.pdf binary
-*.patch text eol=lf
+*.patch text eol=lf whitespace=-blank-at-eol,-blank-at-eof
 *.ps1 text eol=crlf
