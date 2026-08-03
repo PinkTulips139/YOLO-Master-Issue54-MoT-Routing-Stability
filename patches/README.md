@@ -7,4 +7,3 @@ This directory contains two mail-format patches generated from the audited read-
 
 The patches modify upstream-derived files and retain the original repository context and AGPL-3.0 obligations.
 They are evidence of the recorded commits, not a claim that PR #216 has been merged.
-

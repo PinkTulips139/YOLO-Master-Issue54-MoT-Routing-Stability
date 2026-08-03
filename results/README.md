@@ -21,4 +21,3 @@ uses only the first three figures; utilization and pairwise views remain here an
 - `pairwise_routing_agreement.png`: ten descriptive seed-pair aggregates, not ten training replicates.
 
 Every figure is generated from `results/tables/` by `scripts/analysis/build_portfolio_figures.py`.
-

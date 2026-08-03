@@ -9,4 +9,3 @@ All notable changes to this independent research artifact are documented here.
 - Add deterministic figures, validation scripts, provenance, and two exact compatibility patches.
 - Add English and Chinese research-portfolio entry points.
 - Exclude checkpoints, datasets, raw logs, and the large cross-seed routing JSON.
-

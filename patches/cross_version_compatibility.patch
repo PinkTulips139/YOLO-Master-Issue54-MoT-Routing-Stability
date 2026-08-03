@@ -1,0 +1,853 @@
+From 178701a54bc05f9bd7955d2b8f3ac7e4635e587e Mon Sep 17 00:00:00 2001
+From: PinkTulips139 <242140955+PinkTulips139@users.noreply.github.com>
+Date: Mon, 3 Aug 2026 05:06:00 +0800
+Subject: [PATCH] fix(issue54): restore cross-version mixture compatibility
+
+---
+ tests/test_mot.py                      |  57 +++++-----
+ tests/test_routing_diagnostics.py      |  16 +++
+ tests/test_torch_legacy_compat.py      |  29 ++++-
+ ultralytics/cfg/__init__.py            | 147 +++++++++++++------------
+ ultralytics/nn/modules/_numeric.py     |   8 +-
+ ultralytics/nn/modules/moa/block.py    |  54 +++++++--
+ ultralytics/nn/modules/moa/wrappers.py |  16 ++-
+ ultralytics/nn/modules/moe/protocol.py |  77 ++++++++++++-
+ ultralytics/nn/modules/mot/block.py    |  58 ++++++----
+ ultralytics/nn/modules/mot/router.py   |   4 +-
+ 10 files changed, 324 insertions(+), 142 deletions(-)
+
+diff --git a/tests/test_mot.py b/tests/test_mot.py
+index fa42b43..c9f3fba 100644
+--- a/tests/test_mot.py
++++ b/tests/test_mot.py
+@@ -42,7 +42,7 @@ def test_mot_block_forward_backward_all_experts_trainable():
+     # Squared-sum produces O(1) per-element gradient (vs O(1/N) for mean),
+     # ensuring non-selected experts' ~0.02-weighted contribution stays above
+     # the float32 underflow threshold.
+-    ((out ** 2).sum() + aux).backward()
++    ((out**2).sum() + aux).backward()
+     assert _has_grad(block.router)
+     for expert in block.experts:
+         assert _has_grad(expert)
+@@ -110,9 +110,9 @@ def test_localconv_window_attention_is_opt_in_and_shape_preserving():
+ 
+ def test_mot_local_window_config_applies_to_nested_expert():
+     model = C2fMoT(64, 64, n=1, num_heads=4)
+-    resolved = __import__("ultralytics.nn.modules.moe.config", fromlist=["resolve_mixture_config"]).resolve_mixture_config(
+-        SimpleNamespace(mot_local_attn_window=4), model
+-    )
++    resolved = __import__(
++        "ultralytics.nn.modules.moe.config", fromlist=["resolve_mixture_config"]
++    ).resolve_mixture_config(SimpleNamespace(mot_local_attn_window=4), model)
+     from ultralytics.nn.modules.moe.config import apply_mixture_config
+ 
+     apply_mixture_config(model, resolved)
+@@ -156,7 +156,6 @@ def test_mot_deformable_align_corners_option():
+     assert block.experts[2].align_corners is False
+ 
+ 
+-
+ def test_mot_window_size_larger_than_feature_map():
+     """MoT window expert should pad and crop back when window_size exceeds H/W."""
+     torch.manual_seed(0)
+@@ -261,6 +260,7 @@ def test_mot_inference_sparsity_skips_inactive_experts():
+ 
+ # ── Boundary regression tests (issue #54) ──────────────────────────────────
+ 
++
+ def test_mot_block_handles_1x1_feature_map():
+     """MoTBlock must not crash on the smallest possible spatial input (1×1)."""
+     torch.manual_seed(0)
+@@ -277,8 +277,7 @@ def test_mot_block_handles_all_zero_input():
+     """All-zero input must not produce NaN or Inf in output or aux loss."""
+     torch.manual_seed(0)
+     # Use balance_loss_coeff > 0 so aux loss is computed even on zero input
+-    block = MoTBlock(32, num_heads=4, top_k=2, window_size=4, n_points=2,
+-                     balance_loss_coeff=0.01).train()
++    block = MoTBlock(32, num_heads=4, top_k=2, window_size=4, n_points=2, balance_loss_coeff=0.01).train()
+     x = torch.zeros(2, 32, 8, 8)
+     out, aux = block(x)
+     assert out.shape == x.shape
+@@ -338,8 +337,7 @@ def test_c2fmot_handles_minimal_channels():
+ 
+ def test_mot_router_z_loss_handles_extreme_logits():
+     """Router z-loss must guard against overflow on extreme logit values."""
+-    block = MoTBlock(32, num_heads=4, top_k=2, window_size=4, n_points=2,
+-                     balance_loss_coeff=0.01).eval()
++    block = MoTBlock(32, num_heads=4, top_k=2, window_size=4, n_points=2, balance_loss_coeff=0.01).eval()
+     # Simulate extreme router output
+     extreme_logits = torch.full((1, 3, 4, 4), 100.0)
+     z = block.router.z_loss_from_logits(extreme_logits)
+@@ -353,8 +351,7 @@ def test_mot_router_z_loss_handles_extreme_logits():
+ def test_mot_sparse_train_mode():
+     """sparse_train=True must only dispatch to selected experts."""
+     torch.manual_seed(0)
+-    block = MoTBlock(24, num_heads=3, top_k=1, window_size=4, n_points=2,
+-                     sparse_train=True).train()
++    block = MoTBlock(24, num_heads=3, top_k=1, window_size=4, n_points=2, sparse_train=True).train()
+     x = torch.randn(1, 24, 6, 6)
+     out, aux = block(x)
+     assert out.shape == x.shape
+@@ -387,8 +384,7 @@ def test_c2fmot_aux_loss_aggregation():
+     module = C2fMoT(32, 32, n=3, num_heads=4, top_k=2, balance_loss_coeff=0.01).train()
+     module(torch.randn(2, 32, 8, 8))
+     # Each block contributes to total
+-    block_aux = [m.last_aux_loss for m in module.m
+-                 if isinstance(getattr(m, 'last_aux_loss', None), torch.Tensor)]
++    block_aux = [m.last_aux_loss for m in module.m if isinstance(getattr(m, "last_aux_loss", None), torch.Tensor)]
+     assert len(block_aux) == 3
+     assert torch.allclose(module.last_aux_loss, sum(block_aux))
+ 
+@@ -422,19 +418,27 @@ def test_mot_window_expert_handles_window_larger_than_feature_map_train():
+ def test_mot_block_handles_window_larger_than_feature_map_train():
+     """MoTBlock with win > H/W must train: gradients reach all experts and router."""
+     torch.manual_seed(0)
+-    block = MoTBlock(32, num_heads=4, top_k=2, window_size=16, n_points=2,
+-                     balance_loss_coeff=0.01).train()
++    block = MoTBlock(32, num_heads=4, top_k=2, window_size=16, n_points=2, balance_loss_coeff=0.01).train()
+     x = torch.randn(1, 32, 5, 7)
++    route_weights, _ = block.router(x)
++    assert (route_weights > 0).all(), "exploration_eps must keep a real path to every expert"
+     out, aux = block(x)
+     assert out.shape == x.shape
+     assert torch.isfinite(out).all()
+     assert torch.isfinite(aux)
+ 
+-    (out.sum() + aux).backward()
+-    # Non-selected experts still get gradient through exploration_eps blending
++    # GroupNorm makes a plain output sum a mathematically degenerate objective
++    # whose gradient can be exactly zero on some PyTorch kernels. A squared
++    # output loss tests the real exploration path without relying on roundoff.
++    (out.square().sum() + aux).backward()
+     assert _has_grad(block.router)
+     for expert in block.experts:
+         assert _has_grad(expert), f"Expert {type(expert).__name__} has no gradient"
++        assert all(
++            parameter.grad is not None and torch.isfinite(parameter.grad).all()
++            for parameter in expert.parameters()
++            if parameter.requires_grad
++        )
+ 
+ 
+ def test_mot_window_expert_shift_odd_spatial_train():
+@@ -457,8 +461,9 @@ def test_mot_window_expert_shift_odd_spatial_train():
+ def test_mot_block_shift_odd_spatial_train():
+     """MoTBlock with shift=True on odd H/W: full block must train with gradients."""
+     torch.manual_seed(0)
+-    block = MoTBlock(32, num_heads=4, top_k=2, window_size=5, n_points=2,
+-                     window_shift=True, balance_loss_coeff=0.01).train()
++    block = MoTBlock(
++        32, num_heads=4, top_k=2, window_size=5, n_points=2, window_shift=True, balance_loss_coeff=0.01
++    ).train()
+     x = torch.randn(2, 32, 9, 11)
+     out, aux = block(x)
+     assert out.shape == x.shape
+@@ -473,8 +478,7 @@ def test_mot_block_shift_odd_spatial_train():
+ def test_mot_exploration_eps_active_in_train_disabled_in_eval():
+     """exploration_eps must densify routing in train mode, stay inactive in eval."""
+     torch.manual_seed(0)
+-    block = MoTBlock(24, num_heads=3, top_k=1, window_size=4, n_points=2,
+-                     exploration_eps=0.2)
++    block = MoTBlock(24, num_heads=3, top_k=1, window_size=4, n_points=2, exploration_eps=0.2)
+ 
+     # ── Eval: strictly sparse (only top_k=1 expert non-zero) ───────────────
+     block.eval()
+@@ -484,9 +488,7 @@ def test_mot_exploration_eps_active_in_train_disabled_in_eval():
+     assert torch.equal(nonzero_eval, torch.ones_like(nonzero_eval)), (
+         "eval mode must route each token to exactly 1 expert"
+     )
+-    assert torch.allclose(w_eval.sum(dim=1), torch.ones_like(w_eval[:, 0])), (
+-        "eval weights must sum to 1"
+-    )
++    assert torch.allclose(w_eval.sum(dim=1), torch.ones_like(w_eval[:, 0])), "eval weights must sum to 1"
+ 
+     # ── Train: dense from exploration_eps blending ─────────────────────────
+     block.train()
+@@ -498,16 +500,13 @@ def test_mot_exploration_eps_active_in_train_disabled_in_eval():
+     assert (nonzero_train > 1).all(), (
+         f"training mode should have dense routing from exploration_eps={block.router.exploration_eps}"
+     )
+-    assert torch.allclose(w_train.sum(dim=1), torch.ones_like(w_train[:, 0])), (
+-        "train weights must still sum to 1"
+-    )
++    assert torch.allclose(w_train.sum(dim=1), torch.ones_like(w_train[:, 0])), "train weights must still sum to 1"
+ 
+ 
+ def test_mot_exploration_eps_strict_zero_in_eval():
+     """Even with exploration_eps=0, eval mode must stay sparse (no densification)."""
+     torch.manual_seed(0)
+-    block = MoTBlock(24, num_heads=3, top_k=1, window_size=4, n_points=2,
+-                     exploration_eps=0.0).eval()
++    block = MoTBlock(24, num_heads=3, top_k=1, window_size=4, n_points=2, exploration_eps=0.0).eval()
+     with torch.no_grad():
+         w, _idx = block.router(torch.randn(2, 24, 5, 5))
+     nonzero = (w > 0).sum(dim=1)
+diff --git a/tests/test_routing_diagnostics.py b/tests/test_routing_diagnostics.py
+index 58ac121..274617b 100644
+--- a/tests/test_routing_diagnostics.py
++++ b/tests/test_routing_diagnostics.py
+@@ -124,6 +124,22 @@ def test_moa_sparse_inference_keeps_one_group_and_renormalizes(monkeypatch):
+     assert snapshot["approximation_error"] > 0
+ 
+ 
++def test_moa_sparse_threshold_alias_rejects_conflicts_and_propagates_to_children():
++    with pytest.raises(ValueError, match="must match"):
++        MoABlock(
++            24,
++            num_heads=3,
++            sparse_inference_threshold=0.2,
++            inference_sparse_threshold=0.4,
++        )
++
++    module = C2fMoA(48, 48, n=2, num_heads=3, inference_sparse_threshold=0.3)
++    assert module.sparse_inference is True
++    assert module.sparse_inference_threshold == pytest.approx(0.3)
++    assert all(child.sparse_inference is True for child in module.m)
++    assert all(child.sparse_inference_threshold == pytest.approx(0.3) for child in module.m)
++
++
+ def test_c2f_moa_propagates_sequential_head_configuration():
+     module = C2fMoA(48, 48, n=3, num_heads=3, sequential_heads=True)
+ 
+diff --git a/tests/test_torch_legacy_compat.py b/tests/test_torch_legacy_compat.py
+index 4be0dca..9b107a4 100644
+--- a/tests/test_torch_legacy_compat.py
++++ b/tests/test_torch_legacy_compat.py
+@@ -1,7 +1,11 @@
+-"""Regression tests for the minimum supported PyTorch loader API."""
++"""Regression tests for minimum-supported PyTorch APIs."""
+ 
++from contextlib import nullcontext
+ from unittest.mock import Mock
+ 
++import torch
++
++from ultralytics.nn.modules import _numeric
+ from ultralytics.utils import patches, torch_utils
+ 
+ 
+@@ -12,3 +16,26 @@ def test_torch_load_drops_unsupported_weights_only(monkeypatch):
+ 
+     assert patches.torch_load("checkpoint.pt", map_location="cpu", weights_only=False) == {"ok": True}
+     loader.assert_called_once_with("checkpoint.pt", map_location="cpu")
++
++
++def test_disabled_autocast_uses_legacy_cuda_context_without_unified_api(monkeypatch):
++    legacy_autocast = Mock(return_value=nullcontext())
++    monkeypatch.delattr(_numeric.torch, "autocast", raising=False)
++    monkeypatch.setattr(_numeric.torch.cuda.amp, "autocast", legacy_autocast)
++
++    with _numeric.disabled_autocast("cuda"):
++        pass
++
++    legacy_autocast.assert_called_once_with(enabled=False)
++
++
++def test_disabled_autocast_is_noop_for_unsupported_legacy_device(monkeypatch):
++    legacy_autocast = Mock(side_effect=AssertionError("CPU must not use CUDA autocast"))
++    monkeypatch.delattr(_numeric.torch, "autocast", raising=False)
++    monkeypatch.setattr(_numeric.torch.cuda.amp, "autocast", legacy_autocast)
++
++    with _numeric.disabled_autocast("cpu"):
++        result = torch.ones(1) + 1
++
++    assert result.item() == 2
++    legacy_autocast.assert_not_called()
+diff --git a/ultralytics/cfg/__init__.py b/ultralytics/cfg/__init__.py
+index 0c8a5ba..28a1754 100644
+--- a/ultralytics/cfg/__init__.py
++++ b/ultralytics/cfg/__init__.py
+@@ -259,20 +259,23 @@ MIXTURE_FLOAT_KEYS = frozenset(
+         "sigma",
+     }
+ )
+-CFG_FLOAT_KEYS = frozenset(
+-    {  # integer or float arguments, i.e. x=2 and x=2.0
+-        "warmup_epochs",
+-        "box",
+-        "cls",
+-        "dfl",
+-        "dis",
+-        "degrees",
+-        "shear",
+-        "time",
+-        "workspace",
+-        "batch",
+-    }
+-) | MIXTURE_FLOAT_KEYS
++CFG_FLOAT_KEYS = (
++    frozenset(
++        {  # integer or float arguments, i.e. x=2 and x=2.0
++            "warmup_epochs",
++            "box",
++            "cls",
++            "dfl",
++            "dis",
++            "degrees",
++            "shear",
++            "time",
++            "workspace",
++            "batch",
++        }
++    )
++    | MIXTURE_FLOAT_KEYS
++)
+ CFG_FRACTION_KEYS = frozenset(
+     {  # fractional floats use [0.0, 1.0], except dataset fraction uses (0.0, 1.0]
+         "dropout",
+@@ -339,21 +342,24 @@ MIXTURE_INT_KEYS = frozenset(
+         "slice_size",
+     }
+ )
+-CFG_INT_KEYS = frozenset(
+-    {  # integer-only arguments
+-        "epochs",
+-        "patience",
+-        "workers",
+-        "seed",
+-        "close_mosaic",
+-        "mask_ratio",
+-        "max_det",
+-        "vid_stride",
+-        "line_width",
+-        "nbs",
+-        "save_period",
+-    }
+-) | MIXTURE_INT_KEYS
++CFG_INT_KEYS = (
++    frozenset(
++        {  # integer-only arguments
++            "epochs",
++            "patience",
++            "workers",
++            "seed",
++            "close_mosaic",
++            "mask_ratio",
++            "max_det",
++            "vid_stride",
++            "line_width",
++            "nbs",
++            "save_period",
++        }
++    )
++    | MIXTURE_INT_KEYS
++)
+ CFG_INT_MIN = {  # minimum valid values for integer arguments used as divisors, sizes or seeds
+     "nbs": 1,
+     "max_det": 1,
+@@ -363,6 +369,8 @@ CFG_INT_MIN = {  # minimum valid values for integer arguments used as divisors,
+     "mot_sparse_train_warmup_steps": 0,
+     "mot_local_attn_window": 0,
+     "moa_regional_max_kv_tokens": 0,
++    "moe_prune_calibration_steps": 1,
++    "moe_prune_keep_top_m": 1,
+ }
+ MIXTURE_BOOL_KEYS = frozenset(
+     {
+@@ -408,43 +416,46 @@ MIXTURE_BOOL_KEYS = frozenset(
+         "weighted",
+     }
+ )
+-CFG_BOOL_KEYS = frozenset(
+-    {  # boolean-only arguments
+-        "save",
+-        "exist_ok",
+-        "verbose",
+-        "deterministic",
+-        "single_cls",
+-        "rect",
+-        "cos_lr",
+-        "overlap_mask",
+-        "val",
+-        "save_json",
+-        "dnn",
+-        "plots",
+-        "show",
+-        "save_txt",
+-        "save_conf",
+-        "save_crop",
+-        "save_frames",
+-        "show_labels",
+-        "show_conf",
+-        "visualize",
+-        "augment",
+-        "agnostic_nms",
+-        "retina_masks",
+-        "show_boxes",
+-        "keras",
+-        "optimize",
+-        "dynamic",
+-        "simplify",
+-        "nms",
+-        "pre_export_prune",
+-        "profile",
+-        "end2end",
+-        "cls_remap",
+-    }
+-) | MIXTURE_BOOL_KEYS
++CFG_BOOL_KEYS = (
++    frozenset(
++        {  # boolean-only arguments
++            "save",
++            "exist_ok",
++            "verbose",
++            "deterministic",
++            "single_cls",
++            "rect",
++            "cos_lr",
++            "overlap_mask",
++            "val",
++            "save_json",
++            "dnn",
++            "plots",
++            "show",
++            "save_txt",
++            "save_conf",
++            "save_crop",
++            "save_frames",
++            "show_labels",
++            "show_conf",
++            "visualize",
++            "augment",
++            "agnostic_nms",
++            "retina_masks",
++            "show_boxes",
++            "keras",
++            "optimize",
++            "dynamic",
++            "simplify",
++            "nms",
++            "pre_export_prune",
++            "profile",
++            "end2end",
++            "cls_remap",
++        }
++    )
++    | MIXTURE_BOOL_KEYS
++)
+ MIXTURE_STR_KEYS = frozenset(
+     {
+         "iou_type",
+@@ -660,9 +671,7 @@ def check_cfg(cfg: dict, hard: bool = True) -> None:
+                     raise ValueError(f"'{k}={v}' is an invalid value. '{k}' must be >= {CFG_INT_MIN[k]}.")
+             elif k == "lora_init_lora_weights" and not isinstance(v, (bool, str)):
+                 if hard:
+-                    raise TypeError(
+-                        f"'{k}={v}' is of invalid type {type(v).__name__}. '{k}' must be a bool or str."
+-                    )
++                    raise TypeError(f"'{k}={v}' is of invalid type {type(v).__name__}. '{k}' must be a bool or str.")
+                 cfg[k] = bool(v)
+             elif k in CFG_BOOL_KEYS and not isinstance(v, bool):
+                 if hard:
+diff --git a/ultralytics/nn/modules/_numeric.py b/ultralytics/nn/modules/_numeric.py
+index 9d83eb1..3d2fb9b 100644
+--- a/ultralytics/nn/modules/_numeric.py
++++ b/ultralytics/nn/modules/_numeric.py
+@@ -10,7 +10,9 @@ import torch.nn as nn
+ 
+ 
+ def _autocast_is_available(device_type: str) -> bool:
+-    """Return whether this PyTorch build exposes autocast for ``device_type``."""
++    """Return whether this PyTorch build exposes unified autocast for ``device_type``."""
++    if not callable(getattr(torch, "autocast", None)):
++        return False
+     checker = getattr(getattr(torch, "amp", None), "autocast_mode", None)
+     checker = getattr(checker, "is_autocast_available", None)
+     if checker is not None:
+@@ -27,6 +29,10 @@ def disabled_autocast(device_type: str):
+     """Disable autocast when supported, otherwise return a no-op context."""
+     if _autocast_is_available(device_type):
+         return torch.autocast(device_type=device_type, enabled=False)
++    if device_type == "cuda":
++        legacy_autocast = getattr(getattr(getattr(torch, "cuda", None), "amp", None), "autocast", None)
++        if callable(legacy_autocast):
++            return legacy_autocast(enabled=False)
+     return nullcontext()
+ 
+ 
+diff --git a/ultralytics/nn/modules/moa/block.py b/ultralytics/nn/modules/moa/block.py
+index bbdde2b..58200c6 100644
+--- a/ultralytics/nn/modules/moa/block.py
++++ b/ultralytics/nn/modules/moa/block.py
+@@ -4,7 +4,7 @@ from __future__ import annotations
+ import torch
+ import torch.nn as nn
+ from ultralytics.nn.modules.conv import Conv
+-from ultralytics.nn.modules._numeric import should_reduce_ddp
++from ultralytics.nn.modules._numeric import should_reduce_ddp, stable_normalize
+ from ultralytics.nn.modules.utils import robust_deepcopy
+ from ultralytics.nn.modules.routing_protocol import (
+     export_capabilities as _export_routing_capabilities,
+@@ -17,6 +17,24 @@ from .heads import _GlobalAttnHead, _LocalAttnHead, _RegionalAttnHead, _init_con
+ from .router import _MoARouter, _moa_router_aux_loss
+ 
+ 
++def _resolve_sparse_inference_threshold(
++    sparse_inference_threshold: float | None,
++    inference_sparse_threshold: float | None,
++) -> float:
++    """Resolve the canonical threshold and its legacy constructor alias."""
++    if sparse_inference_threshold is not None and inference_sparse_threshold is not None:
++        if float(sparse_inference_threshold) != float(inference_sparse_threshold):
++            raise ValueError(
++                "sparse_inference_threshold and inference_sparse_threshold must match when both are provided"
++            )
++    threshold = (
++        inference_sparse_threshold
++        if sparse_inference_threshold is None and inference_sparse_threshold is not None
++        else sparse_inference_threshold
++    )
++    return 0.02 if threshold is None else float(threshold)
++
++
+ class MoABlock(nn.Module):
+     """Mixture-of-Attention Block.
+ 
+@@ -60,12 +78,16 @@ class MoABlock(nn.Module):
+         sequential_heads: bool = True,
+         regional_max_kv_tokens: int | None = 4096,
+         sparse_inference: bool = False,
+-        sparse_inference_threshold: float = 0.02,
++        sparse_inference_threshold: float | None = None,
++        *,
++        inference_sparse_threshold: float | None = None,
+     ):
+         super().__init__()
+         self.sequential_heads = sequential_heads
+-        self.sparse_inference = bool(sparse_inference)
+-        self.sparse_inference_threshold = float(sparse_inference_threshold)
++        self.sparse_inference = bool(sparse_inference or inference_sparse_threshold is not None)
++        self.sparse_inference_threshold = _resolve_sparse_inference_threshold(
++            sparse_inference_threshold, inference_sparse_threshold
++        )
+         if not 0.0 <= self.sparse_inference_threshold < 1.0:
+             raise ValueError("sparse_inference_threshold must be in [0, 1)")
+         if num_heads <= 0 or num_heads % self.NUM_GROUPS != 0:
+@@ -195,21 +217,37 @@ class MoABlock(nn.Module):
+         else:
+             self.last_routing_snapshot = {}
+ 
+-        w_l = weights[:, 0:1]  # [B, 1, H, W]
+-        w_r = weights[:, 1:2]
+-        w_g = weights[:, 2:3]
+-
+         # ── Attention head outputs ────────────────────────────────────────
+         exporting = torch.jit.is_tracing() or torch.onnx.is_in_onnx_export()
+         sparse_eval = not self.training and self.sparse_inference and not exporting
+         active = None
++        executed_groups = self.NUM_GROUPS
++        approximation_error = 0.0
+         if sparse_eval:
+             # Skip a group only when it contributes less than the configured
+             # threshold for every token in this batch.  The decision is batch-
+             # level, so no per-token Python control flow enters exported graphs.
+             active = weights.detach().amax(dim=(0, 2, 3)) > self.sparse_inference_threshold
++            if not bool(active.any()):
++                dominant = weights.detach().mean(dim=(0, 2, 3)).argmax()
++                active = torch.arange(self.NUM_GROUPS, device=weights.device) == dominant
+             if bool(active.all()):
+                 active = None
++            else:
++                active_weights = weights * active.view(1, -1, 1, 1).to(dtype=weights.dtype)
++                approximation_error = float((weights - active_weights).sum(dim=1).mean().detach())
++                weights = stable_normalize(active_weights, dim=1)
++                executed_groups = int(active.sum())
++
++        if not exporting:
++            self.last_routing_snapshot.update(
++                executed_groups=executed_groups,
++                approximation_error=approximation_error,
++            )
++
++        w_l = weights[:, 0:1]  # [B, 1, H, W]
++        w_r = weights[:, 1:2]
++        w_g = weights[:, 2:3]
+ 
+         if active is not None:
+             mixed = x.new_zeros(x.shape)
+diff --git a/ultralytics/nn/modules/moa/wrappers.py b/ultralytics/nn/modules/moa/wrappers.py
+index 6f731fc..8a8674f 100644
+--- a/ultralytics/nn/modules/moa/wrappers.py
++++ b/ultralytics/nn/modules/moa/wrappers.py
+@@ -18,7 +18,7 @@ from ultralytics.nn.modules.routing_protocol import (
+     routing_finite_diagnostics,
+     routing_snapshot as _routing_snapshot,
+ )
+-from .block import MoABlock
++from .block import MoABlock, _resolve_sparse_inference_threshold
+ from .heads import _LocalAttnHead, _flash_attn, _init_conv_weights
+ from .router import _MoARouter, _moa_router_aux_loss
+ 
+@@ -75,11 +75,15 @@ class C2fMoA(nn.Module):
+         sequential_heads: bool = True,
+         regional_max_kv_tokens: int | None = 4096,
+         sparse_inference: bool = False,
+-        sparse_inference_threshold: float = 0.02,
++        sparse_inference_threshold: float | None = None,
++        *,
++        inference_sparse_threshold: float | None = None,
+     ):
+         super().__init__()
+-        self.sparse_inference = bool(sparse_inference)
+-        self.sparse_inference_threshold = float(sparse_inference_threshold)
++        self.sparse_inference = bool(sparse_inference or inference_sparse_threshold is not None)
++        self.sparse_inference_threshold = _resolve_sparse_inference_threshold(
++            sparse_inference_threshold, inference_sparse_threshold
++        )
+         if not 0.0 <= self.sparse_inference_threshold < 1.0:
+             raise ValueError("sparse_inference_threshold must be in [0, 1)")
+         self.c = int(c2 * e)
+@@ -125,8 +129,8 @@ class C2fMoA(nn.Module):
+                 local_window_size=local_window_size,
+                 sequential_heads=sequential_heads,
+                 regional_max_kv_tokens=regional_max_kv_tokens,
+-                sparse_inference=sparse_inference,
+-                sparse_inference_threshold=sparse_inference_threshold,
++                sparse_inference=self.sparse_inference,
++                sparse_inference_threshold=self.sparse_inference_threshold,
+             )
+             for i in range(n)
+         )
+diff --git a/ultralytics/nn/modules/moe/protocol.py b/ultralytics/nn/modules/moe/protocol.py
+index f5413c5..849cd8a 100644
+--- a/ultralytics/nn/modules/moe/protocol.py
++++ b/ultralytics/nn/modules/moe/protocol.py
+@@ -1,11 +1,71 @@
+-"""Minimal adapters for MoE routing snapshots and derived metrics."""
++"""Unified routed-module protocol, snapshot adapters, and derived metrics."""
+ 
+ from __future__ import annotations
+ 
+ from dataclasses import asdict, dataclass
+-from typing import Any, Iterable, Mapping
++from typing import Any, Iterable, Mapping, Protocol, runtime_checkable
+ 
+ import torch
++import torch.nn as nn
++
++from ..routing_protocol import RoutingAuxPublisher
++
++
++@runtime_checkable
++class RoutedModule(Protocol):
++    """Structural protocol shared by MoE, MoA, MoT, and MoLoRA modules."""
++
++    num_experts: int
++    top_k: int
++
++    @property
++    def aux_loss(self) -> torch.Tensor:
++        """Return the scalar routing auxiliary loss."""
++        ...
++
++    @property
++    def last_routing_snapshot(self) -> dict[str, Any]:
++        """Return detached routing diagnostics from the latest forward."""
++        ...
++
++
++class RoutedModuleMixin:
++    """Compatibility mixin providing generic FLOPs and deepcopy helpers."""
++
++    def get_gflops(self, input_shape: tuple[int, int, int, int]) -> dict[str, float]:
++        """Estimate Conv2d/Linear work for a routed module."""
++        batch, _, height, width = input_shape
++        total_macs = 0.0
++        for module in self.modules():
++            if isinstance(module, nn.Conv2d):
++                macs = (
++                    batch
++                    * module.in_channels
++                    * module.out_channels
++                    * (height // module.stride[0])
++                    * (width // module.stride[1])
++                )
++                total_macs += macs * (module.kernel_size[0] * module.kernel_size[1]) / max(module.groups, 1)
++            elif isinstance(module, nn.Linear):
++                total_macs += batch * module.in_features * module.out_features
++        gflops = total_macs / 1e9
++        return {"total_gflops": gflops, "conv_linear_gflops": gflops}
++
++    def __deepcopy__(self, memo):
++        """Delegate to the canonical routed-module deepcopy helper."""
++        from ._helpers import _robust_deepcopy
++
++        return _robust_deepcopy(self, memo)
++
++
++def is_routed_module(module: nn.Module) -> bool:
++    """Return whether ``module`` satisfies the legacy routed-module contract."""
++    return all(hasattr(module, name) for name in ("num_experts", "top_k", "aux_loss", "last_routing_snapshot"))
++
++
++def collect_routed_children(module: nn.Module) -> list[nn.Module]:
++    """Return routed descendants in module traversal order."""
++    return [child for child in module.modules() if child is not module and is_routed_module(child)]
+ 
+ 
+ @dataclass(frozen=True)
+@@ -87,3 +147,16 @@ def routing_metrics(snapshot: Mapping[str, Any] | None, *, num_experts: int = 0,
+         dominant_expert=dominant,
+         dominant_share=share,
+     )
++
++
++__all__ = [
++    "RoutedModule",
++    "RoutedModuleMixin",
++    "RoutingAuxPublisher",
++    "RoutingMetrics",
++    "collect_routed_children",
++    "is_routed_module",
++    "normalize_routing_snapshot",
++    "routing_metrics",
++    "usage_gini",
++]
+diff --git a/ultralytics/nn/modules/mot/block.py b/ultralytics/nn/modules/mot/block.py
+index e2fb18d..895ae99 100644
+--- a/ultralytics/nn/modules/mot/block.py
++++ b/ultralytics/nn/modules/mot/block.py
+@@ -1,4 +1,5 @@
+ """Core Mixture-of-Transformer block."""
++
+ from __future__ import annotations
+ import torch
+ import torch.nn as nn
+@@ -16,6 +17,7 @@ from .experts import _DeformableTransformerExpert, _LocalConvTransformerExpert,
+ from .router import _MoTRouter, _mot_router_aux_loss
+ from ultralytics.utils import LOGGER
+ 
++
+ class MoTBlock(nn.Module):
+     """Mixture-of-Transformers Block.
+ 
+@@ -104,21 +106,33 @@ class MoTBlock(nn.Module):
+             )
+ 
+         # Three Transformer experts
+-        self.experts = nn.ModuleList([
+-            _LocalConvTransformerExpert(
+-                dim, expert_heads, mlp_ratio, dropout, local_window_size=local_attn_window
+-            ),
+-            _WindowTransformerExpert(dim, expert_heads, window_size, mlp_ratio, dropout,
+-                                     shift_size=window_size // 2 if window_shift else 0),
+-            _DeformableTransformerExpert(
+-                dim, expert_heads, n_points, mlp_ratio, dropout,
+-                align_corners=grid_align_corners,
+-            ),
+-        ])
++        self.experts = nn.ModuleList(
++            [
++                _LocalConvTransformerExpert(dim, expert_heads, mlp_ratio, dropout, local_window_size=local_attn_window),
++                _WindowTransformerExpert(
++                    dim,
++                    expert_heads,
++                    window_size,
++                    mlp_ratio,
++                    dropout,
++                    shift_size=window_size // 2 if window_shift else 0,
++                ),
++                _DeformableTransformerExpert(
++                    dim,
++                    expert_heads,
++                    n_points,
++                    mlp_ratio,
++                    dropout,
++                    align_corners=grid_align_corners,
++                ),
++            ]
++        )
+ 
+         # Router
+         self.router = _MoTRouter(
+-            dim, self.NUM_EXPERTS, top_k,
++            dim,
++            self.NUM_EXPERTS,
++            top_k,
+             use_spatial=use_spatial_router,
+             temperature=temperature,
+             exploration_eps=exploration_eps,
+@@ -231,9 +245,7 @@ class MoTBlock(nn.Module):
+ 
+     def _sparse_training_ready(self) -> bool:
+         """Return whether training has completed the configured dense warmup."""
+-        return bool(
+-            self.sparse_train and int(self._sparse_train_step.item()) >= self.sparse_train_warmup_steps
+-        )
++        return bool(self.sparse_train and int(self._sparse_train_step.item()) >= self.sparse_train_warmup_steps)
+ 
+     def configure_ddp_sparse_training(self, *, find_unused_parameters: bool, source: str = "external") -> None:
+         """Record the DDP unused-parameter contract required by sparse expert dispatch."""
+@@ -317,8 +329,9 @@ class MoTBlock(nn.Module):
+         warmup_step = 0 if exporting else int(self._sparse_train_step.item())
+         B = x.shape[0]
+         route_ids = indices if indices is not None else weights.argmax(dim=1, keepdim=True)
+-        route_mask = torch.zeros_like(weights, dtype=torch.bool)
+-        route_mask.scatter_(1, route_ids, True)
++        route_mask = (
++            torch.zeros_like(weights).scatter(1, route_ids, torch.ones_like(route_ids, dtype=weights.dtype)).bool()
++        )
+         token_mask_sparsity = 1.0 - float(route_mask.float().mean())
+         experts_per_sample = route_mask.reshape(B, self.NUM_EXPERTS, -1).any(dim=2).sum(dim=1)
+         batch_expert_union = int(route_mask.any(dim=(0, 2, 3)).sum())
+@@ -339,7 +352,7 @@ class MoTBlock(nn.Module):
+                 if batch_idx.numel() == 0:
+                     continue
+                 expert_calls += 1
+-                w = weights[batch_idx, e_idx:e_idx + 1]
++                w = weights[batch_idx, e_idx : e_idx + 1]
+                 expert_out = expert(x[batch_idx])
+                 if expert_out.shape != x[batch_idx].shape:
+                     raise RuntimeError(
+@@ -372,7 +385,7 @@ class MoTBlock(nn.Module):
+             }
+         else:
+             for e_idx, expert in enumerate(self.experts):
+-                w = weights[:, e_idx:e_idx + 1]
++                w = weights[:, e_idx : e_idx + 1]
+                 expert_out = expert(x)
+                 if expert_out.shape != x.shape:
+                     raise RuntimeError(
+@@ -413,7 +426,7 @@ class MoTBlock(nn.Module):
+             aux_loss      : scalar (GShard balance + router z-loss, 0 if both coeffs==0)
+         """
+         # ── Routing weights ──────────────────────────────────────────────
+-        weights, indices, router_logits = self.router(x, return_logits=True)   # [B, E, H, W]
++        weights, indices, router_logits = self.router(x, return_logits=True)  # [B, E, H, W]
+ 
+         # ── Expert computation ───────────────────────────────────────────
+         out = self._blend_experts(x, weights, indices)
+@@ -445,9 +458,7 @@ class MoTBlock(nn.Module):
+         else:
+             aux = x.new_zeros(())
+             scene_consistency = x.new_zeros(())
+-            finite_diagnostics = routing_finite_diagnostics(
+-                logits=router_logits, probabilities=weights, aux_loss=aux
+-            )
++            finite_diagnostics = routing_finite_diagnostics(logits=router_logits, probabilities=weights, aux_loss=aux)
+ 
+         exporting = torch.onnx.is_in_onnx_export() or torch.jit.is_tracing()
+         if self.training and not exporting and not torch.isfinite(aux):
+@@ -478,4 +489,5 @@ class MoTBlock(nn.Module):
+ 
+         return out, aux
+ 
++
+ __all__ = ("MoTBlock",)
+diff --git a/ultralytics/nn/modules/mot/router.py b/ultralytics/nn/modules/mot/router.py
+index 017ad8c..87c927d 100644
+--- a/ultralytics/nn/modules/mot/router.py
++++ b/ultralytics/nn/modules/mot/router.py
+@@ -266,9 +266,7 @@ class _MoTRouter(FP32RouterMixin, nn.Module):
+             # renormalize selected weights
+             topk_weights = stable_normalize(topk_vals, dim=1)
+             # scatter back to [B, E, H, W] sparse
+-            sparse_w = torch.zeros_like(weights)
+-            sparse_w.scatter_(1, topk_idx, topk_weights)
+-            weights = sparse_w
++            weights = torch.zeros_like(weights).scatter(1, topk_idx, topk_weights)
+             if self.training and self.exploration_eps > 0:
+                 eps = self.exploration_eps
+                 weights = weights * (1.0 - eps) + dense_weights * eps
+-- 
+2.55.0.windows.2

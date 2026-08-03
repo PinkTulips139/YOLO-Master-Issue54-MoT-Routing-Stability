@@ -8,4 +8,3 @@ SHA256 values needed to audit independent-seed counting.
 - `CHECKPOINT_POLICY.md`: publication gate and exclusion rationale.
 
 See `results/tables/checkpoint_index.csv` for the matching formal result view.
-

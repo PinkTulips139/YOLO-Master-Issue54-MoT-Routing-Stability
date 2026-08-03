@@ -31,4 +31,3 @@ Matplotlib is used by this portfolio's deterministic figure builder.
 
 The repository's AGPL-3.0 license covers this repository as distributed. It does not grant rights to redistribute
 VisDrone data, checkpoint binaries, third-party trademarks, or separately licensed dependencies.
-

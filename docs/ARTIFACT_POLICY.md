@@ -17,4 +17,3 @@ credentials, private URLs, and machine-specific absolute paths.
 
 Raw evidence is never deleted or moved from the existing `Issue54-LocalArchive`; the new private archive is
 copy-only. The public repository contains no large raw JSON.
-

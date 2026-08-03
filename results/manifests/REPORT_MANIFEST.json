@@ -1,0 +1,27 @@
+{
+  "counting_rule": "Independent training seed is the highest experimental unit; images, tokens, layers, and seed pairs do not increase n.",
+  "formal_inputs": {
+    "phase3_architecture_report_manifest.json": "d2355a4f65b4783efa2b819910c6ef34da0cbe02ba7365531860cbc34eef8a61",
+    "phase3_cross_seed_routing.json": "b7049cdbac25c346ac8deb37b505d92bd37406f197458a8f045677c1eba9f7f2",
+    "phase3_formal_registry.json": "3b3f22cd0339dfab372a0b8c27c55dfea4a0b22b57e13a3d92ed8675b7d28540",
+    "phase3_mot_report_manifest.json": "4933d684160d349ccc04a1ec2124548cce7a0a3ecfe1d6a853e741b633c9fa5d"
+  },
+  "public_outputs": {
+    "docs/assets/repository-banner.png": "e95dc831cfedbc83ade8e8975fc24baa55aa619cfcb4f5c35e382adabbabefab",
+    "results/figures/architecture_performance.png": "057de9bbbb690da42e6252cd12ecc3d7ca9016d9c2000ca81d0e9d3be36236d1",
+    "results/figures/expert_utilization_heatmap.png": "1cb01c1e2038e7a5fe5c006be99f274511fab70e9f0c821735eebe347e5d19bc",
+    "results/figures/mot_layer_routing_stability.png": "bbcbc22d81ce0631fc524908246b900ee4c320114afb46c6ab4a670764be4dbf",
+    "results/figures/mot_seed_performance.png": "ad400b4c29fb09045a9ce9640de9680e58f36affe52b0d29da1ab8a8cb6cfb53",
+    "results/figures/pairwise_routing_agreement.png": "34610d29053dae32aa93523fa7a75257d1309c109d3c8ef635943dd6f0e269d8",
+    "results/tables/architecture_summary.csv": "2aefb40779db266ce5fbc9973ce3c94dd7f9002e574df0362729476295901789",
+    "results/tables/checkpoint_index.csv": "442c21ed7e87f3d697000f30437903cf11473d14cd263d605806124c255edfd6",
+    "results/tables/expert_utilization_summary.csv": "ee599519036cbd37501fb93d430a8f0e4a5011713410603c28191d9a8ab28bae",
+    "results/tables/mot_layer_stability.csv": "7a2e4d5f3e4a2c50bd7aff7452218cd95ae6c5de858e66b291d3ed5adb46e280",
+    "results/tables/mot_seed_metrics.csv": "74a8f5feffc7cebbe8d449bd635b52490a70be3d7a756f95532093639b0b015b",
+    "results/tables/pairwise_seed_summary.csv": "46a12f9c563e1e71b9cd246dd73a60799e28c8619737145bfd084ef172583fb7"
+  },
+  "report_type": "issue54_public_portfolio",
+  "schema_version": 1,
+  "source_branch": "issue54-mot-routing-stability",
+  "source_commit": "dd490a80840dd70836e9363e14630039c7086a87"
+}

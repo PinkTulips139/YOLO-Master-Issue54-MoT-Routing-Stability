@@ -8,4 +8,3 @@ the upstream YOLO-Master model YAML files.
 
 Resolve `${DATASET_ROOT}` and use a separate, explicit YOLO-Master checkout. Review every generated command before
 starting compute. This portfolio contains no automatic training launcher.
-

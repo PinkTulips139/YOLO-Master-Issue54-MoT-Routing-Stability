@@ -12,4 +12,3 @@ evidence.
 
 Classification values are `upstream_provided`, `user_added`, `user_modified_upstream`, `generated_artifact`,
 `third_party_reference`, `public_metadata_only`, and `private_only_excluded`.
-

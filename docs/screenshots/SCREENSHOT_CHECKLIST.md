@@ -26,4 +26,3 @@ Use screenshots only after rechecking the current PR head and status.
 - Include only the PASS summary, repository name, and validated revision.
 - Exclude terminal username, prompt path, environment variables, and machine details.
 - Filename: `validator-pass.png`.
-

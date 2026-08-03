@@ -6,4 +6,3 @@
 *.pdf binary
 *.patch text eol=lf
 *.ps1 text eol=crlf
-
