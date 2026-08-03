@@ -33,7 +33,9 @@ python scripts/validation/build_manifests.py
 python scripts/validation/validate_results.py
 ```
 
-The figure check regenerates all six PNGs in a temporary directory and compares bytes. Rebuild manifests after any
+The figure check performs two independent temporary rebuilds and compares their bytes within the current environment.
+Committed PNG identities are separately checked by `SHA256SUMS` and the public repository validator. This split
+avoids treating platform-specific Matplotlib/FreeType encodings as scientific changes. Rebuild manifests after any
 intentional public-file change, then rerun the repository validator.
 
 ## 3. Obtain an upstream checkout separately

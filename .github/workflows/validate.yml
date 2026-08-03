@@ -28,7 +28,7 @@ jobs:
       - name: Validate formal result semantics
         run: python scripts/validation/validate_results.py
 
-      - name: Rebuild and compare deterministic figures
+      - name: Rebuild figures twice and compare hashes
         run: python scripts/analysis/build_portfolio_figures.py --check
 
       - name: Validate public repository

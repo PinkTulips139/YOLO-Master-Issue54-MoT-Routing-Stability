@@ -491,26 +491,33 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def check_existing() -> None:
-    """Regenerate in a temporary directory and compare bytes with committed outputs."""
+def check_determinism() -> None:
+    """Build twice in one environment and require byte-identical PNG outputs."""
     with tempfile.TemporaryDirectory(prefix="issue54-figures-") as tmp:
         root = Path(tmp)
-        build(root / "figures", root / "assets")
-        pairs = [(root / "figures" / name, FIGURES / name) for name in OUTPUTS]
+        first = root / "first"
+        second = root / "second"
+        build(first / "figures", first / "assets")
+        build(second / "figures", second / "assets")
+        pairs = [
+            (first / "figures" / name, second / "figures" / name) for name in OUTPUTS
+        ]
         pairs.append(
             (
-                root / "assets" / "repository-banner.png",
-                ASSETS / "repository-banner.png",
+                first / "assets" / "repository-banner.png",
+                second / "assets" / "repository-banner.png",
             )
         )
         mismatches = [
-            (expected.name, sha256(expected), sha256(actual))
-            for expected, actual in pairs
-            if not actual.exists() or expected.read_bytes() != actual.read_bytes()
+            (left.name, sha256(left), sha256(right))
+            for left, right in pairs
+            if left.read_bytes() != right.read_bytes()
         ]
         if mismatches:
             raise SystemExit(f"deterministic figure mismatch: {mismatches}")
-    print("PASS: all six PNG files reproduce byte-for-byte")
+    print(
+        "PASS: two independent rebuilds produced byte-identical hashes for all six PNG files"
+    )
 
 
 def parse_args() -> argparse.Namespace:
@@ -519,7 +526,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--check",
         action="store_true",
-        help="Regenerate in a temporary directory and compare bytes.",
+        help="Build twice in a temporary directory and compare bytes within the current environment.",
     )
     return parser.parse_args()
 
@@ -528,7 +535,7 @@ def main() -> None:
     """Build or verify the portfolio figures."""
     args = parse_args()
     if args.check:
-        check_existing()
+        check_determinism()
         return
     build(FIGURES, ASSETS)
     print("PASS: generated five result figures and one repository banner")
