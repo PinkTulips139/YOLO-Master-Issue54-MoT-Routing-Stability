@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Build deterministic public artifact and file-level provenance manifests."""
 
 from __future__ import annotations

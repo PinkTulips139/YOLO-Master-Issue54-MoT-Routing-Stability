@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Validate the Issue #54 public repository as a safe, complete publication tree."""
 
 from __future__ import annotations
@@ -93,7 +92,7 @@ def validate_required_and_size(files: list[Path]) -> None:
             {"data", "datasets", "runs"}
             & {
                 path.parts[0].lower()
-                for path in map(lambda p: p.relative_to(ROOT), files)
+                for path in (item.relative_to(ROOT) for item in files)
             }
         ),
         "dataset/run directory found",

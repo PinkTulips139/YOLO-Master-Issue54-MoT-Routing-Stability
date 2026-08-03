@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Build deterministic Issue #54 portfolio figures from validated public CSV tables."""
 
 from __future__ import annotations
@@ -11,11 +10,11 @@ import tempfile
 from pathlib import Path
 
 import matplotlib
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.patches import Circle, FancyBboxPatch
 
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt  # noqa: E402
-import numpy as np  # noqa: E402
-from matplotlib.patches import Circle, FancyBboxPatch  # noqa: E402
+matplotlib.use("Agg", force=True)
 
 ROOT = Path(__file__).resolve().parents[2]
 TABLES = ROOT / "results" / "tables"

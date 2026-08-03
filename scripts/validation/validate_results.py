@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Validate the compact formal Issue #54 result tables and counting semantics."""
 
 from __future__ import annotations
