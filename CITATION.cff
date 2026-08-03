@@ -1,0 +1,44 @@
+cff-version: 1.2.0
+message: >-
+  Please cite this research artifact and separately acknowledge Tencent/YOLO-Master
+  and VisDrone when using the results.
+title: >-
+  YOLO-Master Issue #54: Audited Multi-Seed MoT Routing Stability and
+  Architecture Controls
+type: software
+authors:
+  - name: PinkTulips139
+repository-code: "https://github.com/PinkTulips139/YOLO-Master-Issue54-MoT-Routing-Stability"
+url: "https://github.com/PinkTulips139/YOLO-Master-Issue54-MoT-Routing-Stability"
+version: 1.0.0
+date-released: "2026-08-03"
+license: AGPL-3.0
+keywords:
+  - object detection
+  - mixture of transformers
+  - routing stability
+  - reproducible research
+  - VisDrone
+preferred-citation:
+  type: software
+  title: >-
+    YOLO-Master Issue #54: Audited Multi-Seed MoT Routing Stability and
+    Architecture Controls
+  authors:
+    - name: PinkTulips139
+  version: 1.0.0
+  date-released: "2026-08-03"
+  repository-code: "https://github.com/PinkTulips139/YOLO-Master-Issue54-MoT-Routing-Stability"
+references:
+  - type: software
+    title: Tencent/YOLO-Master
+    repository-code: "https://github.com/Tencent/YOLO-Master"
+  - type: generic
+    title: Tencent/YOLO-Master Issue #54
+    url: "https://github.com/Tencent/YOLO-Master/issues/54"
+  - type: generic
+    title: Manual citation review
+    notes: >-
+      The audited upstream CITATION.cff describes Ultralytics rather than a
+      YOLO-Master-specific paper; no additional DOI is asserted here.
+

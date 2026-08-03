@@ -1,0 +1,40 @@
+# Python and test caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Environments and editors
+.venv/
+venv/
+.idea/
+.vscode/
+
+# Restricted research artifacts
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.engine
+*.tflite
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+*.7z
+*.log
+events.out.tfevents.*
+runs/
+datasets/
+data/
+phase3_cross_seed_routing.json
+
+# Local/private state
+.env
+.env.*
+private/
+local/
+tmp/
+

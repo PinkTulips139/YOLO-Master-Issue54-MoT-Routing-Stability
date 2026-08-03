@@ -1,0 +1,38 @@
+schema_version: 1
+protocol_id: issue54_phase3_formal
+task: detect
+dataset: VisDrone2019-DET
+dataset_version: 2019-DET
+epochs: 30
+batch: 8
+imgsz: 640
+deterministic: true
+highest_experimental_unit: independent_training_seed
+architectures:
+  - architecture: EsMoE
+    model_key: v10
+    seeds: [0, 1, 2]
+    precision: amp
+    routing_export: false
+  - architecture: MoA
+    model_key: v10_moa
+    seeds: [0]
+    precision: amp
+    routing_export: false
+  - architecture: MoT
+    model_key: v10_mot
+    seeds: [0, 1, 2, 3, 4]
+    precision: fp32
+    routing_export: true
+routing:
+  split: val-fixed32
+  image_count: 32
+  layer_count: 6
+  expert_count: 3
+  repeated_export_required: true
+publication:
+  checkpoints: metadata_only
+  dataset: excluded
+  raw_logs: excluded
+  raw_cross_seed_json: private_only
+
